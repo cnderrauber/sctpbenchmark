@@ -236,7 +236,8 @@ func client(c *cli.Context) error {
 		writer = dc
 	}
 
-	interval := time.Second * time.Duration(msgSize) / time.Duration(rate*1024*1024)
+	interval := 5 * time.Millisecond
+	bytesPerLoop := int(time.Duration(rate*1024*1024) / (time.Second / interval))
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	data := make([]byte, msgSize)
@@ -247,12 +248,19 @@ func client(c *cli.Context) error {
 		if dc != nil && dc.BufferedAmount() > 20*1024*1024 {
 			continue
 		}
-		n, err := writer.Write(data)
-		if err != nil {
-			return err
+		toWrite := bytesPerLoop
+		for toWrite > 0 {
+			size := len(data)
+			if toWrite < size {
+				size = toWrite
+			}
+			n, err := writer.Write(data[:size])
+			if err != nil {
+				return err
+			}
+			totalBytes += int64(n)
+			toWrite -= n
 		}
-
-		totalBytes += int64(n)
 		if time.Since(start) > duration {
 			break
 		}
