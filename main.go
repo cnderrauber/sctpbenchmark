@@ -236,7 +236,7 @@ func client(c *cli.Context) error {
 		writer = dc
 	}
 
-	interval := 5 * time.Millisecond
+	interval := 1 * time.Millisecond
 	bytesPerLoop := int(time.Duration(rate*1024*1024) / (time.Second / interval))
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
